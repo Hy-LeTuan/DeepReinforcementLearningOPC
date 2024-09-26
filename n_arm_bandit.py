@@ -27,7 +27,7 @@ class NArmedBandit:
         self.mean_deviation_pairs = []
 
         for i in range(arms):
-            mean = np.random.randint(5, 15)
+            mean = np.random.randint(0, 10)
             deviation = np.random.random()
 
             self.mean_deviation_pairs.append((mean, deviation))
@@ -43,7 +43,8 @@ class NArmedBandit:
         random_numbers = np.random.normal(
             loc=mean, scale=deviation, size=self.reel_numbers)
 
-        random_indices = [int(np.floor(num % 10)) for num in random_numbers]
+        random_indices = [np.abs(int(np.floor(num % 10)))
+                          for num in random_numbers]
         return_symbols = self.symbols[random_indices]
 
         # unallocate memory for efficient computing
@@ -56,6 +57,18 @@ class NArmedBandit:
         else:
             del random_indices
             return return_symbols
+
+    def calculate_reward(self, result):
+        reward = 0.25
+        existing_symbols = {}
+
+        for symbol in result:
+            if existing_symbols.get(symbol):
+                reward += 1
+            else:
+                existing_symbols[symbol] = 1
+
+        return reward
 
     def display_result(self, result: np.array, only_content=False) -> None:
         machine_width = 2 * len(result) - 1
@@ -108,10 +121,17 @@ class NArmedBandit:
                     self.display_result(result, only_content=True)
 
                 time.sleep(delay)
+
         np.save("./scoreboard.npy", scoreboard)
         return scoreboard
 
 
 if __name__ == "__main__":
     bandit = NArmedBandit(arms=10, reel_numbers=3)
-    scoreboard = bandit.play(iterations=1000, delay=0.015)
+    # scoreboard = bandit.play(iterations=1000, delay=0.0000)
+    result, indices = bandit.pull_lever(index=0, return_indices=True)
+    bandit.display_result(result)
+
+    reward = bandit.calculate_reward(result)
+
+    print(reward)
