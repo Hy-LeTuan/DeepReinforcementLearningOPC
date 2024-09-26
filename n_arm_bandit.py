@@ -59,8 +59,7 @@ class NArmedBandit:
             return return_symbols
 
     def calculate_reward(self, result, lever_index):
-        reward = 0.25
-        negative = 0.005
+        reward = 0.0
         existing_symbols = {}
 
         for symbol in result:
@@ -69,7 +68,7 @@ class NArmedBandit:
             else:
                 existing_symbols[symbol] = 1
 
-        return reward - (negative * lever_index)
+        return reward
 
     def display_result(self, result: np.array, only_content=False) -> None:
         machine_width = 2 * len(result) - 1
