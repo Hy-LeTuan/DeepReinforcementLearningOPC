@@ -33,10 +33,8 @@ class BanditAgent:
 
             if choice == 0:
                 action_index = np.argmax(self.update_action_value_table)
-                print("greedy")
             else:
-                action_index = np.random.randint(0, self.action_size + 1)
-                print("explore")
+                action_index = np.random.randint(0, self.action_size)
 
         else:
             action_index = np.armgax(self.update_action_value_table)

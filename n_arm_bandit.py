@@ -58,8 +58,9 @@ class NArmedBandit:
             del random_indices
             return return_symbols
 
-    def calculate_reward(self, result):
+    def calculate_reward(self, result, lever_index):
         reward = 0.25
+        negative = 0.005
         existing_symbols = {}
 
         for symbol in result:
@@ -68,7 +69,7 @@ class NArmedBandit:
             else:
                 existing_symbols[symbol] = 1
 
-        return reward
+        return reward - (negative * lever_index)
 
     def display_result(self, result: np.array, only_content=False) -> None:
         machine_width = 2 * len(result) - 1
@@ -91,6 +92,23 @@ class NArmedBandit:
             print(display_row)
             print(f"| {'- ' * machine_width}|")
             print(f"| {'- ' * machine_width}|")
+
+    def formatted_display(self, result, index, offset=0):
+        """
+        result: symbols after 1 time of rolling
+        index: step of the training loop 
+        offset: number of print statements in your training loop 
+        """
+        LINE_CLEAR = '\x1b[2K'
+        LINE_UP = '\033[1A'
+        if index == 0:
+            self.display_result(result, only_content=False)
+            for i in range(2 + offset):
+                print(LINE_UP, end="")
+
+            print(LINE_UP, end=LINE_CLEAR)
+        else:
+            self.display_result(result, only_content=True)
 
     def play(self, iterations: int, scoreboard: np.array = None, delay: int = 0.015) -> np.array:
         LINE_CLEAR = '\x1b[2K'
@@ -132,6 +150,6 @@ if __name__ == "__main__":
     result, indices = bandit.pull_lever(index=0, return_indices=True)
     bandit.display_result(result)
 
-    reward = bandit.calculate_reward(result)
+    reward = bandit.calculate_reward(result, lever_index=0)
 
     print(reward)
