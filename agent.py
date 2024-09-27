@@ -7,8 +7,10 @@ class BanditAgent:
         self.actions = actions
         self.action_size = len(actions)
 
-        self.action_value_table = np.zeros_like(actions)
-        self.action_count_table = np.zeros_like(actions)
+        self.action_value_table = np.zeros_like(actions, dtype=np.float32)
+        self.action_count_table = np.zeros_like(actions, dtype=np.float32)
+
+        self.greedy = []
 
         self.epsilon = epsilon
 
@@ -20,7 +22,7 @@ class BanditAgent:
 
         # average reward estimate
         self.action_value_table[action_index] = self.action_value_table[action_index] + (
-            (1 / k) * (reward - self.action_count_table[action_index]))
+            (1 / k) * (reward - self.action_value_table[action_index]))
 
         # update action count
         self.update_action_count_table(action_index)
@@ -33,8 +35,10 @@ class BanditAgent:
 
             if choice == 0:
                 action_index = np.argmax(self.update_action_value_table)
+                self.greedy.append(1)
             else:
                 action_index = np.random.randint(0, self.action_size)
+                self.greedy.append(0)
 
         else:
             action_index = np.armgax(self.update_action_value_table)
@@ -47,3 +51,4 @@ if __name__ == "__main__":
                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9], epsilon=0.1)
     for i in range(20):
         a = agent.choose_action_from_value_table()
+        print(a)

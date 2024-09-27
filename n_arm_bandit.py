@@ -3,7 +3,7 @@ import time
 
 
 class NArmedBandit:
-    def __init__(self, arms: int = 10, reel_numbers: int = 3, symbols=None):
+    def __init__(self, arms: int = 10, reel_numbers: int = 3, symbols=None, rewards=None):
         """
         arms: number of levers
         reel_numbers: number of slots on the machine
@@ -16,18 +16,23 @@ class NArmedBandit:
                 ["~", "!", "@", "#", "$", "%", "^", "&", "*", "S"])
             self.symbol_count = 10
         else:
-            self.symbols = symbols
+            self.symbols = np.array(symbols) if type(
+                symbols) == list else symbols
             self.symbol_count = len(symbols)
 
+        if not rewards:
+            self.rewards = np.random.rand(10)
+        else:
+            self.rewards = rewards
+
         self.arms = arms
+        self.mean_deviation_pairs = []
         self.generate_arms(self.arms)
 
     def generate_arms(self, arms) -> None:
         # store mean and std deviation pair for distribution of different arms
-        self.mean_deviation_pairs = []
-
         for i in range(arms):
-            mean = np.random.randint(0, 10)
+            mean = np.random.randint(0, self.symbol_count)
             deviation = np.random.random()
 
             self.mean_deviation_pairs.append((mean, deviation))
@@ -62,11 +67,9 @@ class NArmedBandit:
         reward = 0.0
         existing_symbols = {}
 
-        for symbol in result:
-            if existing_symbols.get(symbol):
-                reward += 1
-            else:
-                existing_symbols[symbol] = 1
+        for i, symbol in enumerate(result):
+            index = np.where(self.symbols == symbol)[0][0]
+            reward += self.rewards[index]
 
         return reward
 
@@ -95,8 +98,8 @@ class NArmedBandit:
     def formatted_display(self, result, index, offset=0):
         """
         result: symbols after 1 time of rolling
-        index: step of the training loop 
-        offset: number of print statements in your training loop 
+        index: step of the training loop
+        offset: number of print statements in your training loop
         """
         LINE_CLEAR = '\x1b[2K'
         LINE_UP = '\033[1A'
