@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     environment = BanditEnvironment(agent=agent, bandit=bandit)
 
-    history, action = environment.train_with_UCB(steps=1000)
+    history, action = environment.train_with_UCB(steps=2000)
     history = np.array(history)
     action = np.array(action)
 
