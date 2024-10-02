@@ -44,15 +44,23 @@ class Enviroment:
         """
         -> returns the number of iteration needed to find an optimal policy, or the number of max iterations if multiple policies are found
         """
-        for iteration in tqdm(range(max_iterations), desc="Policy Check", total=max_iterations):
+        # for iteration in tqdm(range(max_iterations), desc="Policy Check", total=max_iterations):
+        for iteration in range(max_iterations):
             # save old policy and initialize benchmark variables
             benchmark_rental_request_1, benchmark_rental_request_2 = self.get_rental_requests()
             benchmark_customer_return_1, benchmark_customer_return_2 = self.get_customer_returns()
 
+            print(
+                f"benchmark rental 1: {benchmark_rental_request_1} || benchmark rental 2: {benchmark_rental_request_2}")
+
+            print(
+                f"benchmark return 1: {benchmark_customer_return_1} || benchmark return 2: {benchmark_customer_return_2}")
+
             self.policy_history.append(self.agent.policy)
 
             # inner loop to evaluate value function
-            for d in tqdm(range(number_of_days), desc="Policy Evaluation", total=number_of_days):
+            # for d in tqdm(range(number_of_days), desc="Policy Evaluation", total=number_of_days):
+            for d in range(number_of_days):
                 today_rental_request_1, today_rental_request_2 = self.get_rental_requests()
                 today_customer_return_1, today_customer_return_2 = self.get_customer_returns()
 
@@ -60,6 +68,7 @@ class Enviroment:
                                                           today_customer_return_1=today_customer_return_1, today_customer_return_2=today_customer_return_2)
 
                 if self.agent.check_valid_value_function_delta(delta=delta):
+                    print("valid delta")
                     break
 
             # check if current policy is optimal policy
@@ -84,17 +93,25 @@ if __name__ == "__main__":
     expected_return_lambda_1 = 3
     expected_return_lambda_2 = 2
 
-    number_of_days = 100
+    number_of_days = 100000
     max_iterations = 5
 
     # initialize agent
     agent = Agent(cars_max=max_number_of_cars, actions=available_actions, starting_policy=np.zeros(
-        (3, 3)), states=np.zeros((3, 3)), rewards=[0, 10, -2], theta=1e-3, gamma=0.9)
+        (max_number_of_cars, max_number_of_cars, 2), dtype=np.int32), states=np.zeros((max_number_of_cars, max_number_of_cars)), rewards=[10, -2], theta=0.05, gamma=0.9)
 
     # initialize environment
     environment = Enviroment(expected_request_lambda_1=expected_request_lambda_1, expected_request_lambda_2=expected_request_lambda_2,
-                             expected_return_lambda_1=expected_return_lambda_1, expected_return_lambda_2=expected_return_lambda_2)
+                             expected_return_lambda_1=expected_return_lambda_1, expected_return_lambda_2=expected_return_lambda_2, agent=agent)
 
     # start training
-    environment.train(number_of_days=number_of_days,
-                      max_iterations=max_iterations)
+    iteration = environment.train(number_of_days=number_of_days,
+                                  max_iterations=max_iterations)
+
+    print(f"Took {iteration + 1} itertaions to find optmial policy")
+
+    policy_history = np.array(environment.policy_history)
+    np.save("./history.npy", policy_history)
+
+    value_function = environment.agent.state_policy_values
+    np.save("./value_function.npy", value_function)

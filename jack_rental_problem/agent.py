@@ -34,18 +34,12 @@ class Agent:
         return self.rewards[reward_index] * number_of_cars
 
     def p(self, s, action_index: tuple, today_rental_request_1: int, today_rental_request_2: int, today_customer_return_1, today_customer_return_2) -> tuple:
-        # do not include return because returns are only effective till the next day and is therefore added to the number of cars at each location at the end of the loop
-
-        # the probability of getting to the next state is 1 -> return next state
-
-        # what if the next day request is the actual request, and we assume that we actually know the environment and how it works ?
-
-        # from the current state and selecting the action `action_index`, how does it go?
-        # cars1 = self.cars1 + self.actions[action_index]
-        # cars2 = self.cars2 - self.actions[action_index]
-
-        cars1 = s[0]
-        cars2 = s[1]
+        """
+        calculate reward based on the number of rental request and the next state using number of customer returns
+        -> returns a tuple of reward and next state
+        """
+        cars1 = s[0] + 1
+        cars2 = s[1] + 1
 
         # calculate rewards based on today's number of cars
         number_of_cars_moved = self.actions[action_index]
@@ -83,7 +77,10 @@ class Agent:
         """
         -> return the index into the action array 
         """
-        return self.policy[s]
+        action_index = self.policy[s]
+        action_index = tuple(action_index)
+
+        return action_index
 
     def set_action_to_policy(self, action_index: tuple, s: tuple) -> None:
         """
@@ -125,23 +122,29 @@ class Agent:
         -> returns True if the best policy is found, returns false if the policy is not found
         """
 
+        policy_stable = True
+
         for i in range(self.state_policy_values.shape[0]):
             for j in range(self.state_policy_values.shape[1]):
                 s = (i, j)
                 a = self.get_action_from_policy(s)
 
                 # getting the best action for the current state based on the value function. argmax_a p(r, s' | s, a)
-                best_action_index = np.zeros(2)
+                best_action_index = (0, 0)
                 best_action_value = np.float32(0)
 
                 for x in range(self.actions.shape[0]):
                     for y in range(self.actions.shape[1]):
                         action_index = (x, y)
-                        reward, next_state = self.p(s=s, action_index=action_index, today_rental_request_1=today_rental_request_1, today_rental_request_2=today_rental_request_2,
-                                                    today_customer_return_1=today_customer_return_1, today_customer_return_2=today_customer_return_2)
+
+                        try:
+                            reward, next_state = self.p(s=s, action_index=action_index, today_rental_request_1=today_rental_request_1, today_rental_request_2=today_rental_request_2,
+                                                        today_customer_return_1=today_customer_return_1, today_customer_return_2=today_customer_return_2)
+                        except TypeError:
+                            continue
 
                         current_action_value = reward + \
-                            self.state_policy_values[next_state]
+                            self.gamma * self.state_policy_values[next_state]
 
                         if current_action_value > best_action_value:
                             best_action_value = current_action_value
@@ -149,7 +152,10 @@ class Agent:
 
                 self.set_action_to_policy(best_action_index, s)
 
+                print(
+                    f"state: {s} with best_action_index: {best_action_index}")
+
                 if a != best_action_index:
-                    return False
-                else:
-                    return True
+                    policy_stable = False
+
+        return policy_stable
