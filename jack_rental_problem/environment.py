@@ -46,6 +46,7 @@ class Enviroment:
         """
         # for iteration in tqdm(range(max_iterations), desc="Policy Check", total=max_iterations):
         for iteration in range(max_iterations):
+            print(f"iteration number: {iteration}")
             # save old policy and initialize benchmark variables
             benchmark_rental_request_1, benchmark_rental_request_2 = self.get_rental_requests()
             benchmark_customer_return_1, benchmark_customer_return_2 = self.get_customer_returns()
@@ -93,12 +94,14 @@ if __name__ == "__main__":
     expected_return_lambda_1 = 3
     expected_return_lambda_2 = 2
 
-    number_of_days = 100000
+    number_of_days = 1000000
     max_iterations = 5
+
+    rewards = np.array([10, -2])
 
     # initialize agent
     agent = Agent(cars_max=max_number_of_cars, actions=available_actions, starting_policy=np.zeros(
-        (max_number_of_cars, max_number_of_cars, 2), dtype=np.int32), states=np.zeros((max_number_of_cars, max_number_of_cars)), rewards=[10, -2], theta=0.05, gamma=0.9)
+        (max_number_of_cars, max_number_of_cars, 2), dtype=np.int32), states=np.zeros((max_number_of_cars, max_number_of_cars)), rewards=rewards, theta=0.05, gamma=0.9)
 
     # initialize environment
     environment = Enviroment(expected_request_lambda_1=expected_request_lambda_1, expected_request_lambda_2=expected_request_lambda_2,
@@ -108,10 +111,22 @@ if __name__ == "__main__":
     iteration = environment.train(number_of_days=number_of_days,
                                   max_iterations=max_iterations)
 
-    print(f"Took {iteration + 1} itertaions to find optmial policy")
+    if iteration != max_iterations:
+        print(f"Took {iteration + 1} itertaions to find optmial policy")
+    else:
+        print(f"Max iterations reached for policy")
 
     policy_history = np.array(environment.policy_history)
     np.save("./history.npy", policy_history)
 
     value_function = environment.agent.state_policy_values
     np.save("./value_function.npy", value_function)
+
+    # create arrays for additional metrics
+    constants = np.array(
+        [max_number_of_cars, expected_request_lambda_1, expected_request_lambda_2, expected_return_lambda_1, expected_return_lambda_2])
+
+    # save additional metrics
+    np.save("./actions.npy", available_actions)
+    np.save("./rewards.npy", rewards)
+    np.save("./constants.npy", constants)

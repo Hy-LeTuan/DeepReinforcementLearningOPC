@@ -47,18 +47,19 @@ class Agent:
         if cars1 < np.abs(number_of_cars_moved) or cars2 < np.abs(number_of_cars_moved):
             return None
 
-        cars1 += number_of_cars_moved
-        cars2 += number_of_cars_moved
-
-        cost = self.get_reward(
-            1, number_of_cars=np.abs(self.actions[action_index]))
-
         final_reward = np.float32(0)
 
+        # calcuate rewward based on the older number of cars
         # if request > cars -> rent all cars. else, rent 'request' numbers of cars
         reward1 = self.get_reward(0, min(today_rental_request_1, cars1))
         # if request > cars -> rent all cars. else, rent 'request' numbers of cars
         reward2 = self.get_reward(0, min(today_rental_request_2, cars2))
+
+        cars1 += number_of_cars_moved
+        cars2 += number_of_cars_moved
+
+        cost = self.get_reward(
+            1, number_of_cars=np.abs(number_of_cars_moved))
 
         final_reward += reward1
         final_reward += reward2
