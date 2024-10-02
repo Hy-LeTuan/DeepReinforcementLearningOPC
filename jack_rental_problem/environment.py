@@ -61,7 +61,8 @@ class Enviroment:
 
             # inner loop to evaluate value function
             # for d in tqdm(range(number_of_days), desc="Policy Evaluation", total=number_of_days):
-            for d in range(number_of_days):
+
+            while True:
                 today_rental_request_1, today_rental_request_2 = self.get_rental_requests()
                 today_customer_return_1, today_customer_return_2 = self.get_customer_returns()
 
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 
     # initialize agent
     agent = Agent(cars_max=max_number_of_cars, actions=available_actions, starting_policy=np.zeros(
-        (max_number_of_cars, max_number_of_cars, 2), dtype=np.int32), states=np.zeros((max_number_of_cars, max_number_of_cars)), rewards=rewards, theta=0.05, gamma=0.9)
+        (max_number_of_cars + 1, max_number_of_cars + 1, 2), dtype=np.int32), states=np.zeros((max_number_of_cars + 1, max_number_of_cars + 1)), rewards=rewards, theta=0.001, gamma=0.9)
 
     # initialize environment
     environment = Enviroment(expected_request_lambda_1=expected_request_lambda_1, expected_request_lambda_2=expected_request_lambda_2,

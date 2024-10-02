@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 class Agent:
@@ -33,6 +34,83 @@ class Agent:
     def get_reward(self, reward_index, number_of_cars: int):
         return self.rewards[reward_index] * number_of_cars
 
+    def p_theoretical(self, s, action_index: tuple, expected_request_lambda_1=3, expected_request_lambda_2=4, expected_return_lambda_1=3, expected_return_lambda_2=2) -> np.float32:
+        """
+        calculate the theoretical reward based on the Poisson distribution of the number of rental request and the next state using number of customer returns
+        -> returns a tuple of reward and next state reward
+        """
+        cars1 = s[0]
+        cars2 = s[1]
+
+        # calculate rewards based on today's number of cars
+        number_of_cars_moved = self.actions[action_index]
+
+        if cars1 < np.abs(number_of_cars_moved) or cars2 < np.abs(number_of_cars_moved):
+            return None
+
+        final_reward = np.float32(0)
+
+        reward1 = np.float32(0.0)
+        reward2 = np.float32(0.0)
+        cost = self.get_reward(
+            1, number_of_cars=np.abs(number_of_cars_moved))
+
+        # range 12 covers the standard deivation of poisson distribution
+        # calculate theoretical reward for first location
+        for i in range(12):
+            for j in range(12):
+                request_probability = (np.power(expected_request_lambda_1, i) / math.factorial(i)
+                                       ) * np.power(np.e, -expected_request_lambda_1)
+
+                # number of cars rented
+                cars_rented_2 = min(cars1, i)
+
+                # calculate return probabillity for next state
+                return_probability = (np.power(expected_return_lambda_1, j) /
+                                      math.factorial(j)) * np.power(np.e, -expected_return_lambda_1)
+
+                # calculate theoretical reward
+                current_weighted_reward_from_requests = (request_probability *
+                                                         self.get_reward(0, cars_rented_2)) - cost
+
+                # calculate theoretical next state value
+                next_state_weighted_reward_from_returns = (return_probability * (
+                    self.gamma * self.state_policy_values[min(self.cars_max, cars1 + number_of_cars_moved + j - cars_rented_2)]))
+
+                # calculate theoretical reward for second location
+                reward1 += current_weighted_reward_from_requests
+                reward1 += next_state_weighted_reward_from_returns
+
+        # calculate theoretical reward for first location
+        for i in range(12):
+            for j in range(12):
+                request_probability = (np.power(expected_request_lambda_2, i) / math.factorial(i)
+                                       ) * np.power(np.e, -expected_request_lambda_2)
+
+                # number of cars rented
+                cars_rented_2 = min(cars2, i)
+
+                # calculate return probabillity for next state
+                return_probability = (np.power(expected_return_lambda_2, j) /
+                                      math.factorial(j)) * np.power(np.e, -expected_return_lambda_2)
+
+                # calculate theoretical reward
+                current_weighted_reward_from_requests = (request_probability *
+                                                         self.get_reward(0, cars_rented_2)) - cost
+
+                # calculate theoretical next state value
+                next_state_weighted_reward_from_returns = (return_probability * (
+                    self.gamma * self.state_policy_values[min(self.cars_max, cars2 - number_of_cars_moved + j - cars_rented_2)]))
+
+                # calculate theoretical reward for second location
+                reward2 += current_weighted_reward_from_requests
+                reward2 += next_state_weighted_reward_from_returns
+
+        final_reward += reward1
+        final_reward += reward2
+
+        return final_reward
+
     def p(self, s, action_index: tuple, today_rental_request_1: int, today_rental_request_2: int, today_customer_return_1, today_customer_return_2) -> tuple:
         """
         calculate reward based on the number of rental request and the next state using number of customer returns
@@ -55,8 +133,9 @@ class Agent:
         # if request > cars -> rent all cars. else, rent 'request' numbers of cars
         reward2 = self.get_reward(0, min(today_rental_request_2, cars2))
 
+        print(f"number of cars moved: {number_of_cars_moved}")
         cars1 += number_of_cars_moved
-        cars2 += number_of_cars_moved
+        cars2 -= number_of_cars_moved
 
         cost = self.get_reward(
             1, number_of_cars=np.abs(number_of_cars_moved))
@@ -94,6 +173,28 @@ class Agent:
             return True
         else:
             return False
+
+    def theoretical_policy_evaluation_step(self, expected_request_lambda_1=3, expected_request_lambda_2=4, expected_return_lambda_1=3, expected_return_lambda_2=2) -> np.float32:
+        delta = np.float32(0)
+
+        for i in range(self.state_policy_values.shape[0]):
+            for j in range(self.state_policy_values.shape[1]):
+                s = (i, j)
+                v = self.state_policy_values[s]
+
+                action_index = self.get_action_from_policy(s)
+
+                # get reward and next state
+                reward = self.p_theoretical(
+                    s, action_index=action_index, expected_request_lambda_1=expected_request_lambda_1, expected_request_lambda_2=expected_request_lambda_2, expected_return_lambda_1=expected_return_lambda_1, expected_return_lambda_2=expected_return_lambda_2)
+
+                # update current value function of current policy
+                self.state_policy_values[s] = reward
+
+                # calculate difference delta
+                delta = max(delta, np.abs(v - self.state_policy_values[s]))
+
+        return delta
 
     def policy_evaluation_step(self, today_rental_request_1, today_rental_request_2, today_customer_return_1, today_customer_return_2) -> np.float32:
         delta = np.float32(0)
