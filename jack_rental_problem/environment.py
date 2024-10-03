@@ -40,7 +40,7 @@ class Enviroment:
 
         return (customer_return_1, customer_return_2)
 
-    def train(self, number_of_days, max_iterations) -> int:
+    def train(self, max_iterations) -> int:
         """
         -> returns the number of iteration needed to find an optimal policy, or the number of max iterations if multiple policies are found
         """
@@ -82,6 +82,35 @@ class Enviroment:
 
         return max_iterations
 
+    def theoretical_train(self, max_iterations) -> int:
+        """
+        -> returns the number of iteration needed to find an optimal policy, or the number of max iterations if multiple policies are found
+        """
+        # for iteration in tqdm(range(max_iterations), desc="Policy Check", total=max_iterations):
+        self.policy_history.append(self.agent.policy)
+
+        for iteration in range(max_iterations):
+            print(f"iteration number: {iteration}")
+
+            while True:
+                delta = self.agent.theoretical_policy_evaluation_step(
+                    self.expected_request_lambda_1, self.expected_request_lambda_2, self.expected_return_lambda_1, self.expected_return_lambda_2)
+
+                if self.agent.check_valid_value_function_delta(delta=delta):
+                    print("valid delta")
+                    break
+
+            # check if current policy is optimal policy
+            has_optimal_policy = self.agent.theoretical_policy_improvement_step(
+                expected_request_lambda_1=self.expected_request_lambda_1, expected_request_lambda_2=self.expected_request_lambda_2, expected_return_lambda_1=self.expected_return_lambda_1, expected_return_lambda_2=self.expected_return_lambda_2)
+
+            self.policy_history.append(self.agent.policy)
+
+            if has_optimal_policy:
+                return iteration
+
+        return max_iterations
+
 
 if __name__ == "__main__":
     # initialize agent constants
@@ -95,7 +124,6 @@ if __name__ == "__main__":
     expected_return_lambda_1 = 3
     expected_return_lambda_2 = 2
 
-    number_of_days = 1000000
     max_iterations = 5
 
     rewards = np.array([10, -2])
@@ -109,8 +137,7 @@ if __name__ == "__main__":
                              expected_return_lambda_1=expected_return_lambda_1, expected_return_lambda_2=expected_return_lambda_2, agent=agent)
 
     # start training
-    iteration = environment.train(number_of_days=number_of_days,
-                                  max_iterations=max_iterations)
+    iteration = environment.train(max_iterations=max_iterations)
 
     if iteration != max_iterations:
         print(f"Took {iteration + 1} itertaions to find optmial policy")
