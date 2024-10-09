@@ -12,4 +12,8 @@ The separate directories also contain mathematic explaination of these problems,
 
 For example, in `n_armed_bandit`, you can find the popular methods for solving the **exploration vs exploitation** dilemma with methods such as $\epsilon$-greedy or $\text{UCB}$ confidence.
 
-# Execution
+# Usage
+
+Besides the `.md` file in each repository containing specific instructions for running that problem, in general, you can execute the `problem_name/main.py` file with the specific flags to run the RL agent on the problem with any constraints / requirements you want.
+
+The visualization of the result will also be found in the `problem_name/result_visualization.ipynb` file of each problem which contains detailed examination of the output and training graph of each agent.

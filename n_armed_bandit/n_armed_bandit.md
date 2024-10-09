@@ -1,5 +1,3 @@
-# Deep Reinforcement Learning for HCMUT OISP Presentation Contest
-
 # N-armed Bandit implementation
 
 The N-armed Bandit implementation attempts to answer the exploration exploitation dilemma in Reinforcement Learning.
